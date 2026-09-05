@@ -1,0 +1,30 @@
+# Model
+model:
+  name: yolov8n.pt
+  confidence_threshold: 0.5
+  iou_threshold: 0.5
+  classes:
+    - 0
+
+# Video
+video:
+  input: data/input/surveillance.mp4
+  output: data/output/tracked_video.mp4
+
+# Tracking
+tracking:
+  max_age: 30
+  n_init: 3
+  max_cosine_distance: 0.2
+
+# Trajectory
+trajectory:
+  max_history: 50
+  save_csv: true
+
+# Visualization
+visualization:
+  draw_boxes: true
+  draw_ids: true
+  draw_trajectories: true
+  show_confidence: true
