@@ -2,11 +2,7 @@
 
 > **End-to-end multi-object tracking system for surveillance videos using YOLOv8 and DeepSORT, with trajectory reconstruction, visualization and quantitative analysis.**
 
-![Python](https://img.shields.io/badge/Python-3.10+-3776AB?logo=python\&logoColor=white)
-![YOLOv8](https://img.shields.io/badge/YOLOv8-Ultralytics-111111)
-![OpenCV](https://img.shields.io/badge/OpenCV-Computer%20Vision-5C3EE8?logo=opencv\&logoColor=white)
-![DeepSORT](https://img.shields.io/badge/Tracking-DeepSORT-orange)
-![Status](https://img.shields.io/badge/Status-In%20Development-yellow)
+
 
 ---
 
