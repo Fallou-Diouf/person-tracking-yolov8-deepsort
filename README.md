@@ -178,6 +178,7 @@ Example:
 
 ## Project Structure
 
+```text
 person-tracking-yolov8-deepsort/
 │
 ├── configs/
@@ -194,7 +195,7 @@ person-tracking-yolov8-deepsort/
 ├── assets/
 ├── requirements.txt
 └── README.md
-
+```
 ---
 
 ## Installation
