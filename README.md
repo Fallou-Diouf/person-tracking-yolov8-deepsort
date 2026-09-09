@@ -1,356 +1,243 @@
-# Person Tracking with YOLOv8 & DeepSORT
+# Person Tracking with YOLOv8 and DeepSORT
 
-> **End-to-end multi-object tracking system for surveillance videos using YOLOv8 and DeepSORT, with trajectory reconstruction, visualization and quantitative analysis.**
-
-
-
----
+![Python](https://img.shields.io/badge/Python-3.10+-3776AB?logo=python\&logoColor=white)
+![YOLOv8](https://img.shields.io/badge/YOLOv8-Ultralytics-111111)
+![OpenCV](https://img.shields.io/badge/OpenCV-Computer%20Vision-5C3EE8?logo=opencv\&logoColor=white)
+![DeepSORT](https://img.shields.io/badge/Tracking-DeepSORT-orange)
+![Status](https://img.shields.io/badge/Status-In%20Development-yellow)
 
 ## Overview
 
-This project implements an end-to-end **Computer Vision pipeline for detecting, tracking and analyzing people in surveillance videos**.
+This project is a computer vision system for detecting and tracking people in videos.
 
-The system combines:
+It uses **YOLOv8** for person detection and **DeepSORT** for multi-object tracking. The system gives a unique ID to each detected person and keeps track of their position across video frames.
 
-* **YOLOv8** for real-time person detection
-* **DeepSORT** for multi-object tracking
-* **OpenCV** for video processing and visualization
-* **Trajectory analysis** for reconstructing individual movements
-* **CSV export** for downstream data analysis
-
-The main objective is to build a modular and reproducible **Multi-Object Tracking (MOT)** system that can be extended toward intelligent video surveillance applications.
+The project also includes a **trajectory analysis module** that stores the positions of tracked people and draws their trajectories on the video.
 
 ---
 
-## Objectives
+## Project Goals
 
-The project aims to answer the following questions:
+The main goals of this project are to:
 
-* How can people be reliably detected in surveillance videos?
-* How can each detected person be assigned a persistent identity?
-* How can individual trajectories be reconstructed over time?
-* How can tracking data be extracted for quantitative analysis?
-* How does the system behave under occlusions and crowded scenes?
-* What are the computational trade-offs between detection accuracy and real-time performance?
+* Detect people in a video using YOLOv8.
+* Track people across different frames using DeepSORT.
+* Keep a persistent ID for each tracked person.
+* Calculate the center point of each bounding box.
+* Store the positions of each person.
+* Draw the movement trajectory of each person.
+* Generate an annotated output video.
+* Export tracking data for further analysis.
 
 ---
 
-# System Architecture
+## Pipeline
+The complete pipeline is:
 
 ```text
-                    INPUT VIDEO
-                         │
-                         ▼
-                  ┌─────────────┐
-                  │   OpenCV    │
-                  │ Video Reader│
-                  └──────┬──────┘
-                         │
-                         ▼
-                  ┌─────────────┐
-                  │   YOLOv8    │
-                  │   Detector  │
-                  └──────┬──────┘
-                         │
-                  Person Detections
-                  [bbox + confidence]
-                         │
-                         ▼
-                  ┌─────────────┐
-                  │  DeepSORT   │
-                  │   Tracker   │
-                  └──────┬──────┘
-                         │
-                     Track IDs
-                         │
-                         ▼
-                ┌─────────────────┐
-                │    Trajectory   │
-                │     Analyzer    │
-                └────────┬────────┘
-                         │
-              ┌──────────┼──────────┐
-              ▼          ▼          ▼
-         Centroids    Distance    CSV Data
-              │
-              ▼
-       Trajectory History
-              │
-              ▼
-      Annotated Video Output
+Input Video
+     │
+     ▼
+   YOLOv8
+     │
+     ▼
+Person Detection
+     │
+     ▼
+Prepare Detections
+     │
+     ▼
+  DeepSORT
+     │
+     ▼
+Track ID + Bounding Box
+     │
+     ▼
+Calculate Centroid
+     │
+     ▼
+Trajectory Analyzer
+     │
+     ▼
+Store Positions
+     │
+     ▼
+Draw Trajectories
+     │
+     ▼
+Annotated Video + CSV Results
+```
+
+### 1. Person Detection
+
+YOLOv8 analyzes each video frame and detects objects.
+
+For this project, only the **person class** is kept.
+
+Each detection contains:
+
+* Bounding box
+* Confidence score
+* Class ID
+
+The bounding box uses the following format:
+
+```text
+[x1, y1, x2, y2]
 ```
 
 ---
 
-# Detection
+### 2. Multi-Object Tracking
 
-The first stage uses **YOLOv8** to detect objects belonging to the `person` class.
+The detections are sent to DeepSORT.
 
-For every detected person, the detector provides:
+DeepSORT is responsible for tracking people across different frames.
+
+For example:
 
 ```text
-Bounding Box
-Confidence Score
-Class ID
+Frame 1 → Person → ID 1
+Frame 2 → Person → ID 1
+Frame 3 → Person → ID 1
 ```
 
-Example:
+The goal is to keep the same ID for the same person while they move through the video.
+
+---
+
+### 3. Centroid Calculation
+
+For each bounding box, the center point is calculated.
+
+The formula is:
+
+```text
+cx = (x1 + x2) / 2
+cy = (y1 + y2) / 2
+```
+
+For example:
+
+```text
+Bounding box:
+[100, 50, 300, 450]
+
+Centroid:
+(200, 250)
+```
+
+This point is used to represent the position of the person.
+
+---
+
+### 4. Trajectory Analysis
+
+The `TrajectoryAnalyzer` stores the position of each tracked person.
+
+The `track_id` is used as the key.
+
+For example:
+
+```text
+ID 1 → [(100,200), (110,205), (120,210)]
+ID 2 → [(400,100), (390,105), (380,110)]
+```
+
+The project uses a `deque` to keep a limited number of recent positions.
+
+This helps to draw the recent movement of each person.
+
+---
+
+### 5. Trajectory Visualization
+
+The stored points are connected using OpenCV:
 
 ```python
-{
-    "bbox": [x1, y1, x2, y2],
-    "confidence": 0.93,
-    "class_id": 0
-}
+cv2.line()
 ```
 
-The system currently filters detections to the COCO `person` class:
-
-```text
-class_id = 0
-```
-
----
-
-# Multi-Object Tracking
-
-YOLOv8 performs detection independently on each frame. It does **not** maintain object identities across frames.
-
-DeepSORT is therefore used to associate detections over time.
+This creates a visual trajectory for each tracked person.
 
 Example:
 
 ```text
-Frame 1
-
-Person A → ID 1
-Person B → ID 2
-
-
-Frame 2
-
-Person A → ID 1
-Person B → ID 2
-
-
-Frame 3
-
-Person A → ID 1
-Person B → ID 2
+●────●────●────●
 ```
 
-This allows the system to maintain persistent identities and reconstruct individual trajectories.
-
----
-
-# Trajectory Reconstruction
-
-For every tracked person, the system computes the centroid of the bounding box:
+## Technologies
 
 ```text
-center_x = (x1 + x2) / 2
-
-center_y = (y1 + y2) / 2
+| Technology | Role                               |
+| ---------- | ---------------------------------- |
+| Python     | Main programming language          |
+| YOLOv8     | Person detection                   |
+| DeepSORT   | Multi-object tracking              |
+| OpenCV     | Video processing and visualization |
+| NumPy      | Numerical computation              |
 ```
 
-The position history is then represented as:
-
-```text
-Track ID 1
-
-Frame 1 → (450, 320)
-Frame 2 → (455, 324)
-Frame 3 → (462, 331)
-Frame 4 → (470, 339)
-...
-```
-
-These points form the trajectory of the tracked person.
-
-The trajectory can then be visualized directly on the video.
-
----
-
-# Data Export
-
-Tracking information can be exported as CSV for further analysis.
-
-Example:
-
-```csv
-frame,track_id,center_x,center_y
-1,1,452.5,318.0
-2,1,456.0,321.5
-3,1,461.0,326.0
-4,1,468.0,334.0
-1,2,720.5,301.0
-2,2,717.0,305.5
-```
-
-This data can be used for:
-
-* trajectory visualization
-* movement analysis
-* distance estimation
-* speed estimation
-* zone analysis
-* statistical evaluation
-
----
-
-# Output
-
-The current pipeline generates an annotated video containing:
-
-* Bounding boxes
-* Persistent tracking IDs
-* Number of active tracks
-* Processing FPS
-* Current frame number
-* Person trajectories
-
-Example:
-
-```text
-┌─────────────────────────────────────────┐
-│                                         │
-│      ┌───────────────┐                  │
-│      │ Person ID: 1  │                  │
-│      └───────────────┘                  │
-│          ╲                              │
-│           ╲                             │
-│            ●──●──●                     │
-│                                         │
-│                    ┌───────────────┐    │
-│                    │ Person ID: 2  │    │
-│                    └───────────────┘    │
-│                                         │
-│  Active tracks: 2                       │
-│  FPS: 18.4                              │
-│  Frame: 347                             │
-└─────────────────────────────────────────┘
-```
-
-> A real demonstration GIF/video will be added to the repository once the pipeline and visualization are finalized.
-
----
-
-# Project Structure
+## Project Structure
 
 ```text
 person-tracking-yolov8-deepsort/
 │
-├── assets/
-│   ├── architecture.png
-│   └── demo.gif
-│
 ├── configs/
-│   └── config.yaml
-│
 ├── data/
-│   ├── input/
-│   └── output/
-│
 ├── models/
-│
-├── notebooks/
-│   └── exploration.ipynb
-│
-├── results/
-│   ├── metrics/
-│   ├── trajectories/
-│   └── videos/
-│
-├── scripts/
-│   ├── analyze_trajectories.py
-│   └── run_tracking.py
-│
 ├── src/
 │   ├── detection/
-│   │   ├── __init__.py
-│   │   └── yolo_detector.py
-│   │
 │   ├── tracking/
-│   │   ├── __init__.py
-│   │   └── deepsort_tracker.py
-│   │
 │   ├── trajectory/
-│   │   ├── __init__.py
-│   │   └── trajectory_analyzer.py
-│   │
-│   ├── visualization/
-│   │   └── visualizer.py
-│   │
-│   └── main.py
-│
-├── .gitignore
-├── LICENSE
-├── README.md
-└── requirements.txt
+│   └── visualization/
+├── scripts/
+├── notebooks/
+├── results/
+├── assets/
+├── requirements.txt
+└── README.md
 ```
 
 ---
 
-# Installation
+## Installation
 
-## 1. Clone the repository
+### 1. Clone the repository
 
 ```bash
-git clone https://github.com/<Fallou-Diouf>/person-tracking-yolov8-deepsort.git
-
-cd person-tracking-yolov8-deepsort
+git clone https://github.com/Fallou-Diouf/person-tracking-yolov8-deepsort
+cd person_tracking_yolov8_deepsort
 ```
 
-## 2. Create a virtual environment
+### 2. Create a virtual environment
 
-### Windows
-
-```powershell
+```bash
 python -m venv .venv
 ```
+
+### 3. Activate the environment
+
+On Windows:
 
 ```powershell
 .venv\Scripts\activate
 ```
 
-### Linux / macOS
+### 4. Install dependencies
 
 ```bash
-python -m venv .venv
-source .venv/bin/activate
+python -m pip install -r requirements.txt
 ```
 
 ---
 
-## 3. Install dependencies
+## Usage
 
-```bash
-pip install -r requirements.txt
-```
-
-Main dependencies:
+Put your input video in:
 
 ```text
-ultralytics
-opencv-python
-deep-sort-realtime==1.3.2
-numpy
-scipy
-pandas
-matplotlib
-PyYAML
-tqdm
-setuptools==81.0.0
-```
-
----
-
-# Usage
-
-Place a surveillance video in:
-
-```text
-data/input/surveillance.mp4
+data/input/video.mp4
 ```
 
 Then run:
@@ -359,257 +246,141 @@ Then run:
 python -m src.main
 ```
 
-The processed video will be generated at:
+The program will:
+
+1. Read the input video.
+2. Detect people with YOLOv8.
+3. Track people with DeepSORT.
+4. Calculate their center positions.
+5. Store their trajectories.
+6. Draw bounding boxes and IDs.
+7. Draw movement trajectories.
+8. Save the processed video.
+
+The output video is saved to:
 
 ```text
 data/output/tracked_video.mp4
 ```
 
-Trajectory data will be exported to:
+---
+
+##  Current Results
+
+The system was tested on a video with the following characteristics:
+
+| Metric                  |         Result |
+| ----------------------- | -------------: |
+| Resolution              |      478 × 850 |
+| Original FPS            |         30 FPS |
+| Number of frames        |            638 |
+| Processed frames        |            638 |
+| Average processing FPS  |          12.60 |
+| Average processing time | 79.34 ms/frame |
+
+The complete video was successfully processed and the annotated result was generated.
+
+---
+
+## 📈 What I Learned
+
+Through this project, I learned how to build a complete computer vision pipeline.
+
+### Object Detection
+
+I learned:
+
+* Bounding boxes
+* Confidence scores
+* Class IDs
+* IoU
+* Non-Maximum Suppression
+* YOLOv8 detection
+
+### Object Tracking
+
+I learned:
+
+* Kalman Filter concept
+* Track IDs
+* Data association
+* DeepSORT
+* Multi-object tracking
+
+### Trajectory Analysis
+
+I learned:
+
+* Centroid calculation
+* Position history
+* `defaultdict`
+* `deque`
+* Trajectory visualization with OpenCV
+
+---
+
+## 🚧 Limitations
+
+This version has some limitations:
+
+* The trajectory distance is measured in pixels.
+* Real-world distance in meters is not implemented yet.
+* Camera calibration is not implemented.
+* Very crowded scenes can make tracking more difficult.
+* Occlusions can sometimes affect tracking.
+* The current pipeline runs slower than the original video FPS.
+
+---
+
+## 🚀 Future Improvements
+
+The next improvements planned for this project are:
+
+* [ ] Calculate the distance traveled by each person.
+* [ ] Estimate movement speed.
+* [ ] Detect entry and exit events.
+* [ ] Create zones of interest (ROI).
+* [ ] Calculate people occupancy in each zone.
+* [ ] Calculate time spent in a zone.
+* [ ] Improve tracking in crowded scenes.
+* [ ] Add tracking evaluation metrics.
+* [ ] Measure ID switches.
+* [ ] Add MOTA, IDF1 and HOTA metrics.
+* [ ] Improve inference speed.
+* [ ] Add camera calibration and homography.
+* [ ] Explore person re-identification.
+* [ ] Prepare the system for deployment.
+
+---
+
+## Project Architecture
+
+The main idea of the project can be summarized as:
 
 ```text
-results/trajectories/tracks.csv
+YOLOv8
+Detection
+   ↓
+DeepSORT
+Tracking
+   ↓
+Track ID
+Identity
+   ↓
+Centroid
+Position
+   ↓
+TrajectoryAnalyzer
+Movement History
+   ↓
+OpenCV
+Visualization
 ```
 
----
-
-# Configuration
-
-The main parameters are centralized in:
-
-```text
-configs/config.yaml
-```
-
-Example:
-
-```yaml
-model:
-  name: yolov8n.pt
-  confidence_threshold: 0.5
-  iou_threshold: 0.5
-  classes:
-    - 0
-
-tracking:
-  max_age: 30
-  n_init: 3
-  max_cosine_distance: 0.2
-
-trajectory:
-  max_history: 100
-  save_csv: true
-```
-
-This allows experiments to be reproduced without modifying the source code.
+This architecture can later be extended to build more advanced video analytics systems.
 
 ---
 
-# Current Performance
-
-Performance depends on:
-
-* video resolution
-* hardware
-* YOLO model size
-* number of people
-* scene complexity
-
-The pipeline currently reports:
-
-```text
-Average FPS
-Average processing time per frame
-Number of processed frames
-Number of active tracks
-```
-
-Detailed benchmark results will be added after systematic experiments.
-
----
-
-# Experimental Evaluation
-
-The project will progressively evaluate the system under different conditions:
-
-### Detection
-
-* Detection confidence
-* Precision
-* Recall
-* mAP
-
-### Tracking
-
-* IDF1
-* MOTA
-* HOTA
-* ID switches
-
-### Computational Performance
-
-* FPS
-* inference time
-* memory consumption
-* model size
-
-### Scene Conditions
-
-* low-light scenes
-* crowded scenes
-* occlusions
-* different camera viewpoints
-* different resolutions
-
----
-
-# Roadmap
-
-## Phase 1 — Project Initialization
-
-* [x] Repository structure
-* [x] Python virtual environment
-* [x] Dependencies
-* [x] Configuration file
-* [x] Initial documentation
-
-## Phase 2 — Person Detection
-
-* [x] YOLOv8 integration
-* [x] Person class filtering
-* [x] Bounding box visualization
-* [x] Confidence scores
-* [x] Video processing
-* [x] FPS measurement
-
-## Phase 3 — Multi-Object Tracking
-
-* [x] DeepSORT integration
-* [x] Persistent track IDs
-* [x] Track management
-* [x] Annotated tracking video
-
-## Phase 4 — Trajectory Analysis
-
-* [x] Centroid computation
-* [x] Trajectory history
-* [x] Trajectory visualization
-* [x] CSV export
-* [x] Approximate distance calculation
-
-## Phase 5 — Advanced Analysis
-
-* [ ] Full trajectory history
-* [ ] Speed estimation
-* [ ] Entry / exit detection
-* [ ] Regions of Interest (ROI)
-* [ ] Zone occupancy
-* [ ] Dwell time analysis
-
-## Phase 6 — Evaluation
-
-* [ ] Benchmark YOLOv8 model variants
-* [ ] FPS comparison
-* [ ] Detection metrics
-* [ ] Tracking metrics
-* [ ] ID switch analysis
-* [ ] Robustness experiments
-
-## Phase 7 — Portfolio & Documentation
-
-* [ ] Architecture diagram
-* [ ] Demo GIF
-* [ ] Experimental results
-* [ ] Performance tables
-* [ ] Failure case analysis
-* [ ] Final technical report
-
----
-
-# Limitations
-
-The current system operates in image-space coordinates.
-
-Therefore:
-
-```text
-Distance = pixels
-```
-
-and not:
-
-```text
-Distance = meters
-```
-
-Accurate real-world measurements would require camera calibration, scene geometry or a perspective transformation such as a homography.
-
-Tracking performance can also degrade in:
-
-* heavy occlusions
-* very crowded scenes
-* strong illumination changes
-* very small objects
-* fast camera motion
-
-These limitations will be investigated in the experimental evaluation.
-
----
-
-# Future Improvements
-
-Potential extensions include:
-
-* Camera calibration
-* Homography-based ground-plane mapping
-* Real-world distance estimation
-* Speed estimation
-* Entry/exit counting
-* Restricted-zone detection
-* Crowd density estimation
-* Person re-identification
-* Tracking performance benchmarking
-* GPU optimization
-* Real-time deployment
-
----
-
-# Technologies
-
-| Technology | Purpose                   |
-| ---------- | ------------------------- |
-| Python     | Main development language |
-| YOLOv8     | Person detection          |
-| DeepSORT   | Multi-object tracking     |
-| OpenCV     | Video processing          |
-| NumPy      | Numerical computation     |
-| SciPy      | Scientific computation    |
-| Pandas     | Data analysis             |
-| Matplotlib | Visualization             |
-| PyYAML     | Configuration             |
-
----
-
-# Author
+## 👨‍💻 Author
 
 **Fallou Diouf**
-
-Master 2 — Vision et Machine Intelligente
-**Université Paris Cité**
-
-### Areas of interest
-
-* Computer Vision
-* Deep Learning
-* Object Detection
-* Multi-Object Tracking
-* Self-Supervised Learning
-* Image Retrieval
-* Machine Learning
-* Images Processing
-
----
-
-# 📄 License
-
-This project is released under the MIT License.
