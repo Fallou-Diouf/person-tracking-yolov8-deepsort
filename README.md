@@ -168,7 +168,6 @@ Example:
 
 ## Technologies
 
-```text
 | Technology | Role                               |
 | ---------- | ---------------------------------- |
 | Python     | Main programming language          |
@@ -176,11 +175,9 @@ Example:
 | DeepSORT   | Multi-object tracking              |
 | OpenCV     | Video processing and visualization |
 | NumPy      | Numerical computation              |
-```
 
 ## Project Structure
 
-```text
 person-tracking-yolov8-deepsort/
 │
 ├── configs/
@@ -197,7 +194,6 @@ person-tracking-yolov8-deepsort/
 ├── assets/
 ├── requirements.txt
 └── README.md
-```
 
 ---
 
@@ -282,7 +278,7 @@ The complete video was successfully processed and the annotated result was gener
 
 ---
 
-## 📈 What I Learned
+## What I Learned
 
 Through this project, I learned how to build a complete computer vision pipeline.
 
@@ -319,7 +315,7 @@ I learned:
 
 ---
 
-## 🚧 Limitations
+## Limitations
 
 This version has some limitations:
 
@@ -332,7 +328,7 @@ This version has some limitations:
 
 ---
 
-## 🚀 Future Improvements
+## Future Improvements
 
 The next improvements planned for this project are:
 
@@ -381,6 +377,6 @@ This architecture can later be extended to build more advanced video analytics s
 
 ---
 
-## 👨‍💻 Author
+## Author
 
 **Fallou Diouf**
