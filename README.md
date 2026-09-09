@@ -6,12 +6,6 @@
 ![DeepSORT](https://img.shields.io/badge/Tracking-DeepSORT-orange)
 ![Status](https://img.shields.io/badge/Status-In%20Development-yellow)
 
-![Python](https://img.shields.io/badge/Python-3.10+-3776AB?logo=python\&logoColor=white)
-![YOLOv8](https://img.shields.io/badge/YOLOv8-Ultralytics-111111)
-![OpenCV](https://img.shields.io/badge/OpenCV-Computer%20Vision-5C3EE8?logo=opencv\&logoColor=white)
-![DeepSORT](https://img.shields.io/badge/Tracking-DeepSORT-orange)
-![Status](https://img.shields.io/badge/Status-In%20Development-yellow)
-
 
 ## Overview
 
