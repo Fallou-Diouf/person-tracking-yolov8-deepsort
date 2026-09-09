@@ -8,9 +8,40 @@ from src.tracking.deepsort_tracker import DeepSORTTracker
 from src.trajectory.trajectory_analyzer import TrajectoryAnalyzer
 
 
-INPUT_VIDEO = "data/input/surveillance.mp4"
+INPUT_VIDEO = "data/input/input.mp4"
 OUTPUT_VIDEO = "data/output/tracked_video.mp4"
 
+
+def draw_trajectories(frame, trajectory_analyzer):
+    """
+    Draw historical trajectories for all tracked objects.
+    """
+
+    annotated_frame = frame.copy()
+
+    trajectories = (
+        trajectory_analyzer.get_all_trajectories()
+    )
+
+    for track_id, points in trajectories.items():
+
+        if len(points) < 2:
+            continue
+
+        for i in range(1, len(points)):
+
+            _, x1, y1 = points[i - 1]
+            _, x2, y2 = points[i]
+
+            cv2.line(
+                annotated_frame,
+                (int(x1), int(y1)),
+                (int(x2), int(y2)),
+                (0, 0, 255),
+                2,
+            )
+
+    return annotated_frame
 
 def draw_tracks(frame, tracks):
     """Draw tracked persons and their IDs."""
@@ -67,6 +98,10 @@ def main():
         max_age=30,
         n_init=3,
         max_cosine_distance=0.2,
+    )
+    
+    trajectory_analyzer = TrajectoryAnalyzer(
+    max_history=100
     )
 
     # --------------------------------------------------
@@ -143,6 +178,11 @@ def main():
             detections,
             frame,
         )
+        
+        trajectory_analyzer.update(
+            tracks,
+            frame_count,
+        )
 
         # Visualization
         annotated_frame = draw_tracks(
@@ -150,6 +190,11 @@ def main():
             tracks,
         )
 
+        annotated_frame = draw_trajectories(
+            annotated_frame,
+            trajectory_analyzer,
+        )
+        
         # Performance
         processing_time = (
             time.perf_counter() - start_time
@@ -214,6 +259,10 @@ def main():
     cap.release()
     writer.release()
     cv2.destroyAllWindows()
+    
+    trajectory_analyzer.export_csv(
+        "results/trajectories/tracks.csv"
+    )
 
     # --------------------------------------------------
     # 6. Final statistics

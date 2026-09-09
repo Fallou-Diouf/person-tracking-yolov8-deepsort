@@ -6,6 +6,13 @@
 ![DeepSORT](https://img.shields.io/badge/Tracking-DeepSORT-orange)
 ![Status](https://img.shields.io/badge/Status-In%20Development-yellow)
 
+![Python](https://img.shields.io/badge/Python-3.10+-3776AB?logo=python\&logoColor=white)
+![YOLOv8](https://img.shields.io/badge/YOLOv8-Ultralytics-111111)
+![OpenCV](https://img.shields.io/badge/OpenCV-Computer%20Vision-5C3EE8?logo=opencv\&logoColor=white)
+![DeepSORT](https://img.shields.io/badge/Tracking-DeepSORT-orange)
+![Status](https://img.shields.io/badge/Status-In%20Development-yellow)
+
+
 ## Overview
 
 This project is a computer vision system for detecting and tracking people in videos.
@@ -32,6 +39,8 @@ The main goals of this project are to:
 ---
 
 ## Pipeline
+The complete pipeline is:
+
 The complete pipeline is:
 
 ```text
@@ -165,7 +174,6 @@ Example:
 ```text
 ●────●────●────●
 ```
-
 ## Technologies
 
 | Technology | Role                               |
@@ -259,11 +267,9 @@ The output video is saved to:
 ```text
 data/output/tracked_video.mp4
 ```
-
----
-
 ##  Current Results
-
+=======
+## Current Results
 The system was tested on a video with the following characteristics:
 
 | Metric                  |         Result |

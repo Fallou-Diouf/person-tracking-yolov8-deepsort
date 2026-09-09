@@ -1,6 +1,9 @@
 from collections import defaultdict, deque
 from math import sqrt
 
+import csv 
+from pathlib import Path
+
 
 class TrajectoryAnalyzer:
     """
@@ -100,3 +103,44 @@ class TrajectoryAnalyzer:
             total_distance += distance
 
         return total_distance
+    
+    def export_csv(self, output_path): 
+        
+        """ Export all trajectory points to a CSV file. """ 
+        
+        output_path = Path(output_path) 
+        
+        output_path.parent.mkdir(
+            parents=True, 
+            exist_ok=True, 
+        ) 
+        
+        with open( 
+                  output_path, 
+                  "w", 
+                  newline="", 
+                  encoding="utf-8", 
+                ) as csv_file:
+
+                    writer = csv.writer(csv_file)
+                     
+                    writer.writerow( 
+                                        [ 
+                                            "frame", 
+                                            "track_id", 
+                                            "center_x", 
+                                            "center_y", 
+                                        ] 
+                                    ) 
+                    for track_id, points in self.trajectories.items():
+                         
+                        for frame, x, y in points: 
+                            
+                            writer.writerow( 
+                                                [ 
+                                                    frame, 
+                                                    track_id, 
+                                                    x, 
+                                                    y, 
+                                                ] 
+                                            )
