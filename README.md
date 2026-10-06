@@ -223,6 +223,11 @@ On Windows:
 .venv\Scripts\activate
 ```
 
+On Mac
+```bash
+source .venv/bin/activate
+```
+
 ### 4. Install dependencies
 
 ```bash

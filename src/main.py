@@ -8,7 +8,7 @@ from src.tracking.deepsort_tracker import DeepSORTTracker
 from src.trajectory.trajectory_analyzer import TrajectoryAnalyzer
 
 
-INPUT_VIDEO = "data/input/input.mp4"
+INPUT_VIDEO = "data/input/video.mp4"
 OUTPUT_VIDEO = "data/output/tracked_video.mp4"
 
 
